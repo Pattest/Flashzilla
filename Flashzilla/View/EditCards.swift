@@ -9,15 +9,20 @@ import SwiftUI
 
 struct EditCards: View {
     @Environment(\.dismiss) var dismiss
-    @State private var cards = [Card]()
+    @State private var cards: [Card] = DataManager.shared.loadCards()
     @State private var newPrompt = ""
     @State private var newAnswer = ""
+
+    @FocusState private var focusedNewPrompt
+
+    let savePath = FileManager.documentsDirectory.appendingPathComponent("SavedCards")
 
     var body: some View {
         NavigationView {
             List {
                 Section("Add new card") {
                     TextField("Prompt", text: $newPrompt)
+                        .focused($focusedNewPrompt)
                     TextField("Answer", text: $newAnswer)
                     Button("Add card", action: addCard)
                 }
@@ -39,7 +44,6 @@ struct EditCards: View {
                 Button("Done", action: done)
             }
             .listStyle(.grouped)
-            .onAppear(perform: loadData)
         }
     }
 
@@ -47,33 +51,24 @@ struct EditCards: View {
         dismiss()
     }
 
-    func loadData() {
-        if let data = UserDefaults.standard.data(forKey: "Cards") {
-            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
-                cards = decoded
-            }
-        }
-    }
-
-    func saveData() {
-        if let data = try? JSONEncoder().encode(cards) {
-            UserDefaults.standard.set(data, forKey: "Cards")
-        }
-    }
-
     func addCard() {
         let trimmedPrompt = newPrompt.trimmingCharacters(in: .whitespaces)
         let trimmedAnswer = newAnswer.trimmingCharacters(in: .whitespaces)
         guard trimmedPrompt.isEmpty == false && trimmedAnswer.isEmpty == false else { return }
 
-        let card = Card(prompt: trimmedPrompt, answer: trimmedAnswer)
+        let card = Card(prompt: trimmedPrompt,
+                        answer: trimmedAnswer)
         cards.insert(card, at: 0)
-        saveData()
+        DataManager.shared.saveCards(cards)
+
+        newPrompt.removeAll()
+        newAnswer.removeAll()
+        focusedNewPrompt = true
     }
 
     func removeCards(at offsets: IndexSet) {
         cards.remove(atOffsets: offsets)
-        saveData()
+        DataManager.shared.saveCards(cards)
     }
 }
 struct EditCards_Previews: PreviewProvider {

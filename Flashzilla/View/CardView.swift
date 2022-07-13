@@ -17,7 +17,7 @@ struct CardView: View {
     @State private var isShowingAnswer = false
     @State private var offset = CGSize.zero
 
-    var removal: (() -> Void)? = nil
+    var removal: ((Bool) -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -34,7 +34,9 @@ struct CardView: View {
                 differentiateWithoutColor
                 ? nil
                 : RoundedRectangle(cornerRadius: 25, style: .continuous)
-                    .fill(offset.width > 0 ? .green : .red)
+                    .fill(
+                        offset.width == 0 ? .white
+                        : offset.width > 0 ? .green : .red)
             )
             .shadow(radius: 10)
 
@@ -75,9 +77,10 @@ struct CardView: View {
                             feedback.notificationOccurred(.success)
                         } else {
                             feedback.notificationOccurred(.error)
+                            offset = .zero
                         }
 
-                        removal?()
+                        removal?(offset.width > 0)
 
                     } else {
                         offset = .zero

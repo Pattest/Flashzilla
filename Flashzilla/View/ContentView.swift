@@ -38,10 +38,10 @@ struct ContentView: View {
                     .clipShape(Capsule())
 
                 ZStack {
-                    ForEach(0..<cards.count, id: \.self) { index in
-                        CardView(card: cards[index]) {
+                    ForEach(Array(cards.enumerated()), id: \.element) { index, card in
+                        CardView(card: card) { isRight in
                            withAnimation {
-                               removeCard(at: index)
+                               removeCard(at: index, isRight)
                            }
                         }
                         .stacked(at: index, in: cards.count)
@@ -87,7 +87,7 @@ struct ContentView: View {
                     HStack {
                         Button {
                             withAnimation {
-                                removeCard(at: cards.count - 1)
+                                removeCard(at: cards.count - 1, false)
                             }
                         } label: {
                             Image(systemName: "xmark.circle")
@@ -102,7 +102,7 @@ struct ContentView: View {
 
                         Button {
                             withAnimation {
-                                removeCard(at: cards.count - 1)
+                                removeCard(at: cards.count - 1, true)
                             }
                         } label: {
                             Image(systemName: "checkmark.circle")
@@ -138,10 +138,14 @@ struct ContentView: View {
         .onAppear(perform: resetCards)
     }
 
-    func removeCard(at index: Int) {
+    func removeCard(at index: Int, _ isRight: Bool) {
         guard index >= 0 else { return }
 
-        cards.remove(at: index)
+        if isRight {
+            cards.remove(at: index)
+        } else {
+            cards.move(fromOffsets: IndexSet(integer: index), toOffset: 0)
+        }
 
         if cards.isEmpty {
             isActive = false
@@ -151,15 +155,7 @@ struct ContentView: View {
     func resetCards() {
         timeRemaining = 100
         isActive = true
-        loadData()    
-    }
-
-    func loadData() {
-        if let data = UserDefaults.standard.data(forKey: "Cards") {
-            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
-                cards = decoded
-            }
-        }
+        cards = DataManager.shared.loadCards()
     }
 }
 
